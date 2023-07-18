@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Website Monitor</title>
-  <script src="https://unpkg.com/ping.js/dist/ping.min.js"></script>
+  <title>Website Ping Monitor</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -19,57 +18,70 @@
     th {
       background-color: #f2f2f2;
     }
-    .reachable {
-      color: green;
-    }
-    .unreachable {
-      color: red;
-    }
   </style>
 </head>
 <body>
-  <h1>Website Monitor</h1>
+  <h1>Website Ping Monitor</h1>
   <table>
     <thead>
       <tr>
         <th>Website</th>
         <th>Status</th>
+        <th>Response Time (ms)</th>
       </tr>
     </thead>
-    <tbody id="websiteTable"></tbody>
+    <tbody id="pingResults"></tbody>
   </table>
 
   <script>
-    // Define the websites to monitor
-    const websites = [
-      { name: 'Google', url: 'google.com' },
-      { name: 'OpenAI', url: 'openai.com' },
-      { name: 'Example', url: 'example.com' }
-    ];
+    function ping(url, callback) {
+      const start = new Date().getTime();
+      const xhr = new XMLHttpRequest();
 
-    // Function to update the status in the table
-    function updateStatus(website, result) {
-      const table = document.getElementById('websiteTable');
-      const row = table.insertRow();
-      row.insertCell().innerHTML = website.name;
-      const statusCell = row.insertCell();
-      statusCell.classList.add(result ? 'reachable' : 'unreachable');
-      statusCell.innerHTML = result ? 'Reachable' : 'Unreachable';
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+          const end = new Date().getTime();
+          const elapsed = end - start;
+          callback(elapsed);
+        }
+      };
+
+      xhr.open('GET', url, true);
+      xhr.send();
     }
 
-    // Create a new Ping instance
-    const ping = new Ping();
+    function updatePingResults() {
+      const websites = [
+        { name: 'Google', url: 'https://www.google.com' },
+        { name: 'OpenAI', url: 'https://www.openai.com' },
+        { name: 'Example', url: 'https://www.example.com' }
+      ];
 
-    // Start pinging the websites every 5 seconds
-    setInterval(() => {
-      websites.forEach((website) => {
-        ping.ping(website.url).then((result) => {
-          updateStatus(website, true);
-        }).catch((error) => {
-          updateStatus(website, false);
+      const pingResultsElement = document.getElementById('pingResults');
+      pingResultsElement.innerHTML = '';
+
+      websites.forEach(function(website) {
+        const row = document.createElement('tr');
+        const nameCell = document.createElement('td');
+        const statusCell = document.createElement('td');
+        const responseTimeCell = document.createElement('td');
+
+        nameCell.textContent = website.name;
+        row.appendChild(nameCell);
+        row.appendChild(statusCell);
+        row.appendChild(responseTimeCell);
+
+        ping(website.url, function(responseTime) {
+          statusCell.textContent = 'Reachable';
+          responseTimeCell.textContent = responseTime;
         });
+
+        pingResultsElement.appendChild(row);
       });
-    }, 5000);
+    }
+
+    updatePingResults();
+    setInterval(updatePingResults, 5000);
   </script>
 </body>
 </html>
